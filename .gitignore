@@ -2,6 +2,9 @@ target/
 !.mvn/wrapper/maven-wrapper.jar
 !**/src/main/**/target/
 !**/src/test/**/target/
+fdsvgd
+file_e.txt
+file_d.txt
 
 ### IntelliJ IDEA ###
 .idea/modules.xml

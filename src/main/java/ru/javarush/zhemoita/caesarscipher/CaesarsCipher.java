@@ -1,5 +1,6 @@
 package ru.javarush.zhemoita.caesarscipher;
 
+import java.io.BufferedWriter;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -13,7 +14,7 @@ public class CaesarsCipher {
             'и','к', 'л', 'м', 'н', 'о', 'п', 'р', 'с', 'т', 'у', 'ф', 'х', 'ц', 'ч', 'ш', 'щ',
             'ъ', 'ы', 'ь', 'э', 'я', '.', ',', '«', '»', '"', '\'', ':', '!', '?', ' '};
 
-    //TODO Methods for brute force, statistical analysis
+    //TODO Methods for statistical analysis
 
     public void encrypt(String inputFile, String outputFile, int key) {
         char[] shiftedAlphabet = new char[ALPHABET.length];
@@ -82,69 +83,69 @@ public class CaesarsCipher {
     }
 
     public void bruteForce(String inputFile, String outputFile, String optionalSampleFile) {
-        //TODO Brute force realization
         char[] shiftedAlphabet = new char[ALPHABET.length];
+        int cipherKey = 0;
 
-        for (int key = 0; key < ALPHABET.length; key++) {
-            for (int i = 0; i < key; i++) {
-                shiftedAlphabet[i] = ALPHABET[shiftedAlphabet.length - key + i];
-            }
+            for (int key = 0; key < ALPHABET.length; key++) {
+                try (FileReader reader = new FileReader(inputFile.trim());
+                     FileReader readerSample = new FileReader(optionalSampleFile.trim())) {
 
-            for (int i = key, j = 0; i < shiftedAlphabet.length; i++, j++) {
-                shiftedAlphabet[i] = ALPHABET[j];
-            }
+                    for (int i = 0; i < key; i++) {
+                        shiftedAlphabet[i] = ALPHABET[shiftedAlphabet.length - key + i];
+                    }
 
-            try(FileReader reader = new FileReader(inputFile.trim());
-                FileReader readerSample = new FileReader(optionalSampleFile.trim());
-                FileWriter writer = new FileWriter(outputFile.trim())) {
-//                char[] buffer = new char[65_536]; // 64Kb
-//                char[] bufferSample = new char[65_536];
-                char[] buffer = new char[1024];
-                char[] bufferSample = new char[1024];
+                    for (int i = key, j = 0; i < shiftedAlphabet.length; i++, j++) {
+                        shiftedAlphabet[i] = ALPHABET[j];
+                    }
 
-                while (reader.ready()) {
-                    int real = reader.read(buffer);
-                    for (int i = 0; i < buffer.length; i++) {
-                        for (int j = 0; j < ALPHABET.length; j++) {
-                            if (buffer[i] == ALPHABET[j]) {
-                                buffer[i] = shiftedAlphabet[j];
-                                break;
+                    char[] buffer = new char[65_536]; // 64Kb
+                    char[] bufferSample = new char[65_536];
+
+                    while (reader.ready() && readerSample.ready()) {
+                        int real = reader.read(buffer);
+                        int realSample = readerSample.read(bufferSample);
+
+                        for (int i = 0; i < buffer.length; i++) {
+                            for (int j = 0; j < ALPHABET.length; j++) {
+                                if (buffer[i] == ALPHABET[j]) {
+                                    buffer[i] = shiftedAlphabet[j];
+                                    break;
+                                }
+                            }
+                        }
+
+                        String bufferString = new String(buffer, 0, real);
+                        String stringSample = new String(bufferSample, 0, realSample);
+                        StringBuilder stringSampleFilteredBuilder = new StringBuilder();
+
+                        String[] arrayBuffer = bufferString.split("[,.\\s]");
+                        String[] arraySample = stringSample.split("[,.\\s]");
+
+                        for (String string : arraySample) {
+                            if (!string.isEmpty()) {
+                                if (!stringSampleFilteredBuilder.isEmpty()) {
+                                    stringSampleFilteredBuilder.append(" ");
+                                }
+                                stringSampleFilteredBuilder.append(string);
+                            }
+                        }
+
+                        String[] stringSampleFilteredArray = stringSampleFilteredBuilder.toString().split(" ");
+
+                        for (int i = 0; i < arrayBuffer.length; i++) {
+                            for (int j = 0; j < stringSampleFilteredArray.length; j++) {
+                                if (arrayBuffer[i].length() > 3 && arrayBuffer[i].equals(stringSampleFilteredArray[j])) {
+                                    cipherKey = key;
+                                    break;
+                                }
                             }
                         }
                     }
-                    // If buffer contains
-                    String bufferString = new String(buffer);
-                    int realSample = readerSample.read(bufferSample);
-                    String stringSample = new String(bufferSample);
-
-                    String[] arrayBuffer = bufferString.split(" ");
-                    String[] arraySample = stringSample.split(" ");
-
-//                    for (int i = 0; i < arraySample.length; i++) {
-//                        if (bufferString.contains(arraySample[i])) {
-//                            writer.write(buffer, 0, real);
-//                            break;
-//                        }
-//                    }
-
-
-                    for (int i = 0; i < arrayBuffer.length; i++) {
-                        for (int j = 0; j < arraySample.length; j++) {
-                            if (arrayBuffer[i].equals(arraySample[j])) {
-//                                newAlphabet = shiftedAlphabet;
-//                                newKey = key;
-//                                writer.write(buffer,0, real);
-//                                break;
-                            }
-                        }
-                    }
+                } catch (IOException e) {
+                    throw new RuntimeException(e.getMessage());
                 }
-
-                decrypt(inputFile, outputFile, key);
-            } catch (IOException e) {
-                throw new RuntimeException(e.getMessage());
             }
-        }
+        decrypt(inputFile, outputFile, cipherKey);
     }
 
     public void statisticalAnalysis(String inputFile, String outputFile, String optionalSampleFile) {
@@ -188,7 +189,7 @@ public class CaesarsCipher {
         switch (choose) {
             case 1 -> {
                 while (true) {
-                    System.out.println("Decoding...");
+                    System.out.println("Encoding...");
                     System.out.println("Enter the path to the file to be encoded:");
                     inputFile = console.nextLine();
                     System.out.println("Specify the path to save the encrypted file:");
@@ -220,7 +221,7 @@ public class CaesarsCipher {
                 System.out.print("File successfully decrypted!");
             }
             case 3 -> {
-                System.out.println("Brute force ...");
+                System.out.println("Brute force...");
                 System.out.println("Enter the path to the file to be decoded:");
                 inputFile = console.nextLine();
                 System.out.println("Specify the path to save the decrypted file:");
