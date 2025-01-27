@@ -1,11 +1,8 @@
 package ru.javarush.zhemoita.caesarscipher;
 
-import java.io.BufferedWriter;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.lang.reflect.Array;
-import java.util.Arrays;
 import java.util.Scanner;
 
 public class CaesarsCipher {
@@ -14,19 +11,15 @@ public class CaesarsCipher {
             'и','к', 'л', 'м', 'н', 'о', 'п', 'р', 'с', 'т', 'у', 'ф', 'х', 'ц', 'ч', 'ш', 'щ',
             'ъ', 'ы', 'ь', 'э', 'я', '.', ',', '«', '»', '"', '\'', ':', '!', '?', ' '};
 
-    //TODO Methods for statistical analysis
-
     public void encrypt(String inputFile, String outputFile, int key) {
         char[] shiftedAlphabet = new char[ALPHABET.length];
-        int iterator = 0;
 
         for (int i = 0; i < shiftedAlphabet.length - key; i++) {
             shiftedAlphabet[i] = ALPHABET[i + key];
         }
 
-        for (int i = shiftedAlphabet.length - key; i < shiftedAlphabet.length; i++) {
-            shiftedAlphabet[i] = ALPHABET[iterator];
-            iterator++;
+        for (int i = shiftedAlphabet.length - key, j = 0; i < shiftedAlphabet.length; i++, j++) {
+            shiftedAlphabet[i] = ALPHABET[j];
         }
 
         try(FileReader reader = new FileReader(inputFile.trim());
@@ -51,15 +44,13 @@ public class CaesarsCipher {
 
     public void decrypt(String inputFile, String outputFile, int key) {
         char[] shiftedAlphabet = new char[ALPHABET.length];
-        int iterator = 0;
 
         for (int i = 0; i < key; i++) {
             shiftedAlphabet[i] = ALPHABET[shiftedAlphabet.length - key + i];
         }
 
-        for (int i = key; i < shiftedAlphabet.length; i++) {
-            shiftedAlphabet[i] = ALPHABET[iterator];
-            iterator++;
+        for (int i = key, j = 0; i < shiftedAlphabet.length; i++, j++) {
+            shiftedAlphabet[i] = ALPHABET[j];
         }
 
         try(FileReader reader = new FileReader(inputFile.trim());
@@ -145,35 +136,68 @@ public class CaesarsCipher {
                     throw new RuntimeException(e.getMessage());
                 }
             }
+
         decrypt(inputFile, outputFile, cipherKey);
     }
 
     public void statisticalAnalysis(String inputFile, String outputFile, String optionalSampleFile) {
-        //TODO Statistical analysis realization
-    }
+        char[] shiftedAlphabet = new char[ALPHABET.length];
+        int cipherKey = 0;
+        int maxCharCounter = 0;
 
-    //TODO Auxiliary methods: validateInput(), createAlphabet(), shiftCharacter(), readFile(), writeFile()
+        for (int key = 0; key < ALPHABET.length; key++) {
+            try (FileReader reader = new FileReader(inputFile.trim());
+                 FileReader readerSample = new FileReader(optionalSampleFile.trim())) {
+                for (int i = 0; i < key; i++) {
+                    shiftedAlphabet[i] = ALPHABET[shiftedAlphabet.length - key + i];
+                }
+
+                for (int i = key, j = 0; i < shiftedAlphabet.length; i++, j++) {
+                    shiftedAlphabet[i] = ALPHABET[j];
+                }
+
+                char[] buffer = new char[65_536]; // 64Kb
+                char[] bufferSample = new char[65_536];
+
+                while (reader.ready() && readerSample.ready()) {
+                    reader.read(buffer);
+                    readerSample.read(bufferSample);
+
+                    for (int i = 0; i < buffer.length; i++) {
+                        for (int j = 0; j < ALPHABET.length; j++) {
+                            if (buffer[i] == ALPHABET[j]) {
+                                buffer[i] = shiftedAlphabet[j];
+                                break;
+                            }
+                        }
+                    }
+
+                    int charCount = 0;
+                    for (char charBuffer: buffer) {
+                        if (charBuffer == ' ') charCount++;
+                    }
+
+                    if (maxCharCounter < charCount) {
+                        maxCharCounter = charCount;
+                        cipherKey = key;
+                    }
+                }
+            } catch (IOException e) {
+                throw new RuntimeException(e.getMessage());
+            }
+        }
+
+        decrypt(inputFile, outputFile, cipherKey);
+    }
 
     public static void main(String[] args) {
         CaesarsCipher cipher = new CaesarsCipher();
-        //TODO Menu logic
-        // 1. Encoding
-        // 2. Decoding with a key
-        // 3. Brute force
-        // 4. Statistical analysis
-        // 0. Exit
-
-        // Example of call method encoding
-        // cipher.encrypt("input.txt", "output.txt", 3);
-
-        CaesarsCipher cypher = new CaesarsCipher();
         Scanner console = new Scanner(System.in);
         String inputFile = null;
         String outputFile = null;
         String optionalSampleFile = null;
         String keyMessage = String.format("Enter the encryption key from 0 to %d:", ALPHABET.length - 1);
         int key = 0;
-        boolean toggle = true;
         String menu = """
                 Please select the menu item and enter it's number:
                 1. Encoding
@@ -196,17 +220,13 @@ public class CaesarsCipher {
                     outputFile = console.nextLine();
                     System.out.println(keyMessage);
                     key = Integer.parseInt(console.nextLine());
-//                    key = console.nextInt();
-
                     if (key < 0 && key > ALPHABET.length - 1) {
                         System.out.format("Enter the key from 0 to %d", ALPHABET.length - 1);
                     } else {
                         break;
                     }
                 }
-                // C:\\Users\\zhem_\\Desktop\\file.txt
-                // C:\\Users\\zhem_\\Desktop\\filec.txt
-                cypher.encrypt(inputFile, outputFile, key);
+                cipher.encrypt(inputFile, outputFile, key);
                 System.out.print("File successfully encrypted!");
             }
             case 2 -> {
@@ -217,7 +237,7 @@ public class CaesarsCipher {
                 outputFile = console.nextLine();
                 System.out.println(keyMessage);
                 key = Integer.parseInt(console.nextLine());
-                cypher.decrypt(inputFile, outputFile, key);
+                cipher.decrypt(inputFile, outputFile, key);
                 System.out.print("File successfully decrypted!");
             }
             case 3 -> {
@@ -228,11 +248,19 @@ public class CaesarsCipher {
                 outputFile = console.nextLine();
                 System.out.println("Enter the path to the file that contains the sample text:");
                 optionalSampleFile = console.nextLine();
-                cypher.bruteForce(inputFile, outputFile, optionalSampleFile);
+                cipher.bruteForce(inputFile, outputFile, optionalSampleFile);
                 System.out.print("File successfully decrypted with brute force!");
             }
             case 4 -> {
-                System.out.println("Stat analysis");
+                System.out.println("Statistical analysis");
+                System.out.println("Enter the path to the file to be decoded:");
+                inputFile = console.nextLine();
+                System.out.println("Specify the path to save the decrypted file:");
+                outputFile = console.nextLine();
+                System.out.println("Enter the path to the file that contains the sample text:");
+                optionalSampleFile = console.nextLine();
+                cipher.statisticalAnalysis(inputFile, outputFile, optionalSampleFile);
+                System.out.println("File successfully decrypted with statistical analysis!");
             }
             case 0 -> {
                 System.out.print("Program exit...");
