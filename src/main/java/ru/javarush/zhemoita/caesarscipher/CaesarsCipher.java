@@ -1,5 +1,6 @@
 package ru.javarush.zhemoita.caesarscipher;
 
+import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -38,7 +39,7 @@ public class CaesarsCipher {
                 writer.write(buffer, 0, real);
             }
         } catch (IOException e) {
-            throw new RuntimeException(e.getMessage());
+            System.out.println("The file at the path you specified doesn't exist! Please specify the correct path to the file.\n");
         }
     }
 
@@ -69,7 +70,7 @@ public class CaesarsCipher {
                 writer.write(buffer, 0, real);
             }
         } catch (IOException e) {
-            throw new RuntimeException(e.getMessage());
+            System.out.println("The file at the path you specified doesn't exist! Please specify the correct path to the file.\n");
         }
     }
 
@@ -133,7 +134,7 @@ public class CaesarsCipher {
                         }
                     }
                 } catch (IOException e) {
-                    throw new RuntimeException(e.getMessage());
+                    System.out.println("The file at the path you specified doesn't exist! Please specify the correct path to the file.\n");
                 }
             }
 
@@ -183,7 +184,7 @@ public class CaesarsCipher {
                     }
                 }
             } catch (IOException e) {
-                throw new RuntimeException(e.getMessage());
+                System.out.println("The file at the path you specified doesn't exist! Please specify the correct path to the file.\n");
             }
         }
 
@@ -198,77 +199,81 @@ public class CaesarsCipher {
         String optionalSampleFile = null;
         String keyMessage = String.format("Enter the encryption key from 0 to %d:", ALPHABET.length - 1);
         int key = 0;
-        String menu = """
-                Please select the menu item and enter it's number:
-                1. Encoding
-                2. Decoding with a key
-                3. Brute force
-                4. Statistical analisys
-                0. Exit
-                """;
+        boolean running = true;
 
-        System.out.println(menu);
-        int choose = Integer.parseInt(console.nextLine());
+        while (running) {
+            String menu = """
+                    Please select the menu item and enter it's number:
+                    1. Encoding
+                    2. Decoding with a key
+                    3. Brute force
+                    4. Statistical analysis
+                    0. Exit
+                    """;
 
-        switch (choose) {
-            case 1 -> {
-                while (true) {
-                    System.out.println("Encoding...");
-                    System.out.println("Enter the path to the file to be encoded:");
-                    inputFile = console.nextLine();
-                    System.out.println("Specify the path to save the encrypted file:");
-                    outputFile = console.nextLine();
-                    System.out.println(keyMessage);
-                    key = Integer.parseInt(console.nextLine());
-                    if (key < 0 && key > ALPHABET.length - 1) {
-                        System.out.format("Enter the key from 0 to %d", ALPHABET.length - 1);
-                    } else {
-                        break;
+            System.out.println(menu);
+            int choice = Integer.parseInt(console.nextLine());
+
+            switch (choice) {
+                case 1 -> {
+                    try {
+                        System.out.println("Encoding...");
+                        System.out.println("Enter the path to the file to be encoded:");
+                        inputFile = console.nextLine();
+                        System.out.println("Specify the path to save the encrypted file:");
+                        outputFile = console.nextLine();
+                        System.out.println(keyMessage);
+                        key = Integer.parseInt(console.nextLine());
+                        cipher.encrypt(inputFile, outputFile, key);
+                        System.out.print("Encoding end.\n");
+                    } catch (ArrayIndexOutOfBoundsException | NumberFormatException e) {
+                        System.out.format("The value of the key is outside the range of permissible values!\nThe key value is a natural integer in the range from 0 to %d.\nPlease enter the correct key from 0 to %d and try again.\n\n", ALPHABET.length - 1, ALPHABET.length - 1);
                     }
                 }
-                cipher.encrypt(inputFile, outputFile, key);
-                System.out.print("File successfully encrypted!");
-            }
-            case 2 -> {
-                System.out.println("Decoding...");
-                System.out.println("Enter the path to the file to be decoded:");
-                inputFile = console.nextLine();
-                System.out.println("Specify the path to save the decrypted file:");
-                outputFile = console.nextLine();
-                System.out.println(keyMessage);
-                key = Integer.parseInt(console.nextLine());
-                cipher.decrypt(inputFile, outputFile, key);
-                System.out.print("File successfully decrypted!");
-            }
-            case 3 -> {
-                System.out.println("Brute force...");
-                System.out.println("Enter the path to the file to be decoded:");
-                inputFile = console.nextLine();
-                System.out.println("Specify the path to save the decrypted file:");
-                outputFile = console.nextLine();
-                System.out.println("Enter the path to the file that contains the sample text:");
-                optionalSampleFile = console.nextLine();
-                cipher.bruteForce(inputFile, outputFile, optionalSampleFile);
-                System.out.print("File successfully decrypted with brute force!");
-            }
-            case 4 -> {
-                System.out.println("Statistical analysis");
-                System.out.println("Enter the path to the file to be decoded:");
-                inputFile = console.nextLine();
-                System.out.println("Specify the path to save the decrypted file:");
-                outputFile = console.nextLine();
-                System.out.println("Enter the path to the file that contains the sample text:");
-                optionalSampleFile = console.nextLine();
-                cipher.statisticalAnalysis(inputFile, outputFile, optionalSampleFile);
-                System.out.println("File successfully decrypted with statistical analysis!");
-            }
-            case 0 -> {
-                System.out.print("Program exit...");
-                System.exit(0);
-            }
-            default -> {
-                System.out.print("Unknown menu number! Program exit...");
-                System.exit(0);
+                case 2 -> {
+                    try {
+                        System.out.println("Decoding...");
+                        System.out.println("Enter the path to the file to be decoded:");
+                        inputFile = console.nextLine();
+                        System.out.println("Specify the path to save the decrypted file:");
+                        outputFile = console.nextLine();
+                        System.out.println(keyMessage);
+                        key = Integer.parseInt(console.nextLine());
+                        cipher.decrypt(inputFile, outputFile, key);
+                        System.out.print("Decoding end.\n");
+                    } catch (ArrayIndexOutOfBoundsException | NumberFormatException e) {
+                        System.out.format("The value of the key is outside the range of permissible values!\nThe key value is a natural integer in the range from 0 to %d.\nPlease enter the correct key from 0 to %d and try again.\n\n", ALPHABET.length - 1, ALPHABET.length - 1);
+                    }
+                }
+                case 3 -> {
+                    System.out.println("Brute force...");
+                    System.out.println("Enter the path to the file to be decoded:");
+                    inputFile = console.nextLine();
+                    System.out.println("Specify the path to save the decrypted file:");
+                    outputFile = console.nextLine();
+                    System.out.println("Enter the path to the file that contains the sample text:");
+                    optionalSampleFile = console.nextLine();
+                    cipher.bruteForce(inputFile, outputFile, optionalSampleFile);
+                    System.out.print("The end of brute force decryption.");
+                }
+                case 4 -> {
+                    System.out.println("Statistical analysis...");
+                    System.out.println("Enter the path to the file to be decoded:");
+                    inputFile = console.nextLine();
+                    System.out.println("Specify the path to save the decrypted file:");
+                    outputFile = console.nextLine();
+                    System.out.println("Enter the path to the file that contains the sample text:");
+                    optionalSampleFile = console.nextLine();
+                    cipher.statisticalAnalysis(inputFile, outputFile, optionalSampleFile);
+                    System.out.println("End of decryption using statistical analysis.");
+                }
+                case 0 -> {
+                    System.out.print("Program exit...");
+                    running = false;
+                }
+                default -> {
+                    System.out.print("Unknown menu number! Please try again...\n");
+                }
             }
         }
     }
